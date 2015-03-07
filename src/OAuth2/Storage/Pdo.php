@@ -156,6 +156,30 @@ class Pdo implements
         return $stmt->execute(compact('access_token', 'client_id', 'user_id', 'expires', 'scope'));
     }
 
+    /**
+     * Expire specific access token. In effect, logging out user.
+     */
+    public function expireAccessToken($access_token)
+    {
+        $expires = time(); // Now.
+
+        $stmt = $this->db->prepare(sprintf('UPDATE %s SET expires=:expires WHERE access_token=:access_token', $this->config['access_token_table']));
+
+        return $stmt->execute(compact('expires', 'access_token'));
+    }
+
+    /**
+     * Expire ALL tokens owned by user.
+     */
+    public function expireAllAccessTokens($user_id)
+    {
+        $expires = time(); // Now.
+
+        $stmt = $this->db->prepare(sprintf('UPDATE %s SET expires=:expires WHERE user_id=:user_id AND expires > :expires', $this->config['access_token_table']));
+
+        return $stmt->execute(compact('expires', 'user_id'));
+    }
+
     /* OAuth2\Storage\AuthorizationCodeInterface */
     public function getAuthorizationCode($code)
     {
@@ -297,10 +321,12 @@ class Pdo implements
         return $stmt->execute(compact('refresh_token'));
     }
 
-    // plaintext passwords are bad!  Override this for your application
+    /**
+     * Verify password against stored hash.
+     */
     protected function checkPassword($user, $password)
     {
-        return $user['password'] == sha1($password);
+        return password_verify($password, $user['password']);
     }
 
     public function getUser($username)
@@ -313,15 +339,21 @@ class Pdo implements
         }
 
         // the default behavior is to use "username" as the user_id
-        return array_merge(array(
+        /*return array_merge(array(
             'user_id' => $username
-        ), $userInfo);
+        ), $userInfo);*/
+
+        // Overriding the default behavior here so that username is kept 
+        // as the user_id for OAuth2.
+        return array_merge($userInfo, array(
+            'user_id' => $username
+        ));
     }
 
     public function setUser($username, $password, $firstName = null, $lastName = null)
     {
         // do not store in plaintext
-        $password = sha1($password);
+        $password = password_hash($password);
 
         // if it exists, update it.
         if ($this->getUser($username)) {
