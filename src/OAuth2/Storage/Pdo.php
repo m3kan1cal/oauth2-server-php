@@ -338,22 +338,26 @@ class Pdo implements
             return false;
         }
 
-        // the default behavior is to use "username" as the user_id
-        /*return array_merge(array(
+        // the default behavior is to use "username" as the user_id. This
+        // works OK because user_id is not in use in the user table (oauth_user_id is).
+        return array_merge(array(
             'user_id' => $username
-        ), $userInfo);*/
-
-        // Overriding the default behavior here so that username is kept 
-        // as the user_id for OAuth2.
-        return array_merge($userInfo, array(
-            'user_id' => $username
-        ));
+        ), $userInfo);
     }
 
+    /**
+     * @todo Update this so that it can be used for registration.
+     *
+     * @param $username
+     * @param $password
+     * @param null $firstName
+     * @param null $lastName
+     * @return bool
+     */
     public function setUser($username, $password, $firstName = null, $lastName = null)
     {
         // do not store in plaintext
-        $password = password_hash($password);
+        $password = password_hash($password, PASSWORD_DEFAULT);
 
         // if it exists, update it.
         if ($this->getUser($username)) {
