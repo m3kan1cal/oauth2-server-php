@@ -194,7 +194,9 @@ class Request implements RequestInterface
         $class = get_called_class();
         $request = new $class($_GET, $_POST, array(), $_COOKIE, $_FILES, $_SERVER);
 
-        $contentType = ($request->server('CONTENT_TYPE', '') === '') ? $request->server('HTTP_CONTENT_TYPE', '') : '';
+        $contentType = ($request->server('CONTENT_TYPE', '') === '') ? $request->server('HTTP_CONTENT_TYPE', '') :
+            $request->server('CONTENT_TYPE', '');
+
         $requestMethod = $request->server('REQUEST_METHOD', 'GET');
 
         if (0 === strpos($contentType, 'application/x-www-form-urlencoded')
